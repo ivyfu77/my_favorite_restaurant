@@ -2,13 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Neighborhood Map</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/narrow-screen.css" media="screen and (max-width: 979px)" />
 </head>
 <body>
-
+	<div class="container">
+		<div id="options">
+			<header>
+				<h1>My Favorite </h1>
+				<img src="img/restaurant-icon-3.png" />
+			</header>
+			<div class="select_container">
+				<label for="styles">Styles: </label>
+				<select name="styles" id="styles">
+				  <option value="all">All</option>
+				  <option value="chinese">Chinese</option>
+				  <option value="western">Western</option>
+				  <option value="japnese">Japnese</option>
+				  <option value="korean">Korean</option>
+				</select>
+			</div>
+			<div class="select_container">
+				<label for="area">Areas: </label>
+				<select name="area" id="area">
+				  <option value="all">All</option>
+				  <option value="northshore">North Shore</option>
+				  <option value="city">City</option>
+				</select>
+			</div>
+			<hr>
+			<ul id="place_list">
+				<li><a href="#">Smart Kitchen</a></li>
+				<li><a href="#">Asian Wok</a></li>
+			</ul>
+		</div>
+		<div id="map"></div>
+		<div class="toggle-btn"><a onclick="toggleMenu()">&#9776;</a></div>
+	</div>
 	<script src="js/libs/jquery.min.js"></script>
 	<script src="js/libs/knockout-3.4.2.js"></script>
 	<script src="js/app.js"></script>
+	<script async defer
+	  src="https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry&callback=initMap">
+	</script>
 </body>
 </html>

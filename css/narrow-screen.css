@@ -1,0 +1,38 @@
+/*
+ * For Devices with narrow screen less than 980px
+ *
+ */
+
+.toggle-btn {
+	display: block;
+    position: absolute;
+    top: 5px;
+    left: 10px;
+}
+header {
+	justify-content: flex-end;
+	padding-right: 15px;
+}
+header h1 {
+	font-size: 1.5em;
+}
+header img {
+	width: 30px;
+}
+#options {
+	display: block;
+	width: 280px;
+	height: 100vh;
+	position: absolute;
+	top: 0;
+	-webkit-transform: translate(-285px, 0px);
+	transform: translate(-285px,0px);
+	transition: transform 0.3s ease;
+}
+#options.open {
+  -webkit-transform: translate(0, 0px);
+  transform: translate(0, 0px);
+}
+#map {
+	left: 0px;
+}
