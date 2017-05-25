@@ -33,9 +33,8 @@
 				</select>
 			</div>
 			<hr>
-			<ul id="place_list">
-				<li><a href="#">Smart Kitchen</a></li>
-				<li><a href="#">Asian Wok</a></li>
+			<ul id="place_list" data-bind="foreach: placeList">
+				<li><a href="#"><div data-bind="text: name"></div></a></li>
 			</ul>
 		</div>
 		<div id="map"></div>
