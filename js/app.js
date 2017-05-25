@@ -111,6 +111,10 @@ var initPlaces = [
 	{name: 'Smart Kitchen', location: {lat:-36.738642, lng: 174.717706}, style: 'chinese', Area: 'northshore'},
 	{name: 'Asian Work', location: {lat:-36.714350, lng: 174.747421}, style: 'chinese', Area: 'northshore'},
 	{name: "Bushman's Grill", location: {lat:-36.790714, lng: 174.749119}, style: 'western', Area: 'northshore'},
+	{name: "Galbraith's Alehouse", location: {lat:-36.865644, lng: 174.761184}, style: 'western', Area: 'city'},
+	{name: "Pen Pen Xian", location: {lat:-36.867522, lng: 174.776866}, style: 'chinese', Area: 'city'},
+	{name: "Bian Sushi & Donburi", location: {lat:-36.863015, lng: 174.760968}, style: 'japnese', Area: 'city'},
+	{name: "Seoul Restaurant", location: {lat:-36.855832, lng: 174.762400}, style: 'korean', Area: 'city'},
 ];
 
 // Model: Define the favorite place module
