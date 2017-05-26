@@ -129,7 +129,7 @@ var Toggle = function() {
 	this.isClicked = ko.observable(false);
 };
 
-// View Model: Define the VM, control all the information chaing for Model
+// View Model: Define the VM, control all the information changing for Models
 var ViewModel = function() {
 	var self = this; 
 	this.placeList = ko.observableArray([]);
@@ -140,72 +140,73 @@ var ViewModel = function() {
 	this.toggle = new Toggle();
 	this.toggleMenu = function() {
 		self.toggle.isClicked(!self.toggle.isClicked());
-	}
+	};
+
+	/*
+	-- Google Maps Control
+	*/
+	var map;
+	var markers = [];
+	// Function to initialize the map within the map div
+	this.initMap = function() {
+		console.log("initMap");
+		map = new google.maps.Map($("#map")[0], {
+			center: {lat: -36.745779, lng: 174.746269},
+			styles: styles,
+			zoom: 13,
+			mapTypeControl: false
+		});
+
+		// Style the markers a bit. This will be our listing marker icon.
+		var defaultIcon = self.makeMarkerIcon('42c2f4');
+		// Create a "highlighted location" marker color for when the user
+		// mouses over the marker.
+		var highlightedIcon = self.makeMarkerIcon('f49541');
+
+		// The following group uses the location array to create an array of markers on initialize.
+		for (var i = 0; i<initPlaces.length; i++) {
+		  // Get the position from the location array.
+		  var position = initPlaces[i].location;
+		  var title = initPlaces[i].name;
+
+		  // Create a marker per location, and put into markers array.
+		  var marker = new google.maps.Marker({
+		    position: position,
+		    title: title,
+		    animation: google.maps.Animation.DROP,
+		    //icon: "img/restaurant-icon-small.png",
+		    icon: defaultIcon,
+		    id: i
+		  });
+		  marker.setMap(map);
+		  // Push the marker to our array of markers
+		  markers.push(marker);
+		  // Two event listeners - one for mouseover, one for mouseout,
+		  // to change the colors back and forth.
+		  marker.addListener('mouseover', function() {
+		    this.setIcon(highlightedIcon);
+		  });
+		  marker.addListener('mouseout', function() {
+		    this.setIcon(defaultIcon);
+		  });
+		}
+	};
+
+	// This function takes in a COLOR, and then creates a new marker
+	// icon of that color. The icon will be 21 px wide by 34 high, have an origin
+	// of 0, 0 and be anchored at 10, 34).
+	this.makeMarkerIcon = function(markerColor) {
+		var image = {
+			url: 'http://chart.googleapis.com/chart?chst=d_map_spin&chld=1.15|0|'+ markerColor + '|40|_|%E2%80%A2',
+			size: new google.maps.Size(21, 34),
+			origin: new google.maps.Point(0, 0),
+			anchor: new google.maps.Point(10, 34),
+			scaledSize: new google.maps.Size(21, 34)
+		};
+	  	return image;
+	};
 };
 
-ko.applyBindings(new ViewModel());
+var vm = new ViewModel();
 
-/*
--- Google Maps Control
-*/
-
-var map;
-var markers = [];
-// Function to initialize the map within the map div
-function initMap() {
-	console.log("initMap");
-	map = new google.maps.Map($("#map")[0], {
-		center: {lat: -36.745779, lng: 174.746269},
-		styles: styles,
-		zoom: 13,
-		mapTypeControl: false
-	});
-
-	// Style the markers a bit. This will be our listing marker icon.
-	var defaultIcon = makeMarkerIcon('42c2f4');
-	// Create a "highlighted location" marker color for when the user
-	// mouses over the marker.
-	var highlightedIcon = makeMarkerIcon('f49541');
-
-	// The following group uses the location array to create an array of markers on initialize.
-	for (var i = 0; i<initPlaces.length; i++) {
-	  // Get the position from the location array.
-	  var position = initPlaces[i].location;
-	  var title = initPlaces[i].name;
-
-	  // Create a marker per location, and put into markers array.
-	  var marker = new google.maps.Marker({
-	    position: position,
-	    title: title,
-	    animation: google.maps.Animation.DROP,
-	    //icon: "img/restaurant-icon-small.png",
-	    icon: defaultIcon,
-	    id: i
-	  });
-	  marker.setMap(map);
-	  // Push the marker to our array of markers
-	  markers.push(marker);
-	  // Two event listeners - one for mouseover, one for mouseout,
-	  // to change the colors back and forth.
-	  marker.addListener('mouseover', function() {
-	    this.setIcon(highlightedIcon);
-	  });
-	  marker.addListener('mouseout', function() {
-	    this.setIcon(defaultIcon);
-	  });
-	}
-}
-
-// This function takes in a COLOR, and then creates a new marker
-// icon of that color. The icon will be 21 px wide by 34 high, have an origin
-// of 0, 0 and be anchored at 10, 34).
-function makeMarkerIcon(markerColor) {
-	var image = {
-		url: 'http://chart.googleapis.com/chart?chst=d_map_spin&chld=1.15|0|'+ markerColor + '|40|_|%E2%80%A2',
-		size: new google.maps.Size(21, 34),
-		origin: new google.maps.Point(0, 0),
-		anchor: new google.maps.Point(10, 34),
-		scaledSize: new google.maps.Size(21, 34)
-	};
-  	return image;
-}
+ko.applyBindings(vm);
