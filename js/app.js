@@ -108,13 +108,13 @@ var styles = [
 	}
 ];
 var initPlaces = [
-	{name: 'Smart Kitchen', location: {lat:-36.738642, lng: 174.717706}, style: 'chinese', Area: 'northshore'},
-	{name: 'Asian Work', location: {lat:-36.714350, lng: 174.747421}, style: 'chinese', Area: 'northshore'},
-	{name: "Bushman's Grill", location: {lat:-36.790714, lng: 174.749119}, style: 'western', Area: 'northshore'},
-	{name: "Galbraith's Alehouse", location: {lat:-36.865644, lng: 174.761184}, style: 'western', Area: 'city'},
-	{name: "Pen Pen Xian", location: {lat:-36.867522, lng: 174.776866}, style: 'chinese', Area: 'city'},
-	{name: "Bian Sushi & Donburi", location: {lat:-36.863015, lng: 174.760968}, style: 'japnese', Area: 'city'},
-	{name: "Seoul Restaurant", location: {lat:-36.855832, lng: 174.762400}, style: 'korean', Area: 'city'},
+	{name: 'Smart Kitchen', location: {lat:-36.738642, lng: 174.717706}, style: 'chinese', Area: 'northshore', marker: null},
+	{name: 'Asian Work', location: {lat:-36.714350, lng: 174.747421}, style: 'chinese', Area: 'northshore', marker: null},
+	{name: "Bushman's Grill", location: {lat:-36.790714, lng: 174.749119}, style: 'western', Area: 'northshore', marker: null},
+	{name: "Galbraith's Alehouse", location: {lat:-36.865644, lng: 174.761184}, style: 'western', Area: 'city', marker: null},
+	{name: "Pen Pen Xian", location: {lat:-36.867522, lng: 174.776866}, style: 'chinese', Area: 'city', marker: null},
+	{name: "Bian Sushi & Donburi", location: {lat:-36.863015, lng: 174.760968}, style: 'japnese', Area: 'city', marker: null},
+	{name: "Seoul Restaurant", location: {lat:-36.855832, lng: 174.762400}, style: 'korean', Area: 'city', marker: null},
 ];
 
 // Model: Define the favorite place module
@@ -142,11 +142,14 @@ var ViewModel = function() {
 		self.toggle.isClicked(!self.toggle.isClicked());
 	};
 
+	this.curPlace = ko.observable(this.placeList()[0]);
+
 	/*
 	-- Google Maps Control
 	*/
 	var map;
 	var markers = [];
+
 	// Function to initialize the map within the map div
 	this.initMap = function() {
 		console.log("initMap");
@@ -163,6 +166,9 @@ var ViewModel = function() {
 		// mouses over the marker.
 		var highlightedIcon = self.makeMarkerIcon('f49541');
 
+		// Define the bounds for all the markers
+		var bounds = new google.maps.LatLngBounds();
+		
 		// The following group uses the location array to create an array of markers on initialize.
 		for (var i = 0; i<initPlaces.length; i++) {
 		  // Get the position from the location array.
@@ -178,7 +184,12 @@ var ViewModel = function() {
 		    icon: defaultIcon,
 		    id: i
 		  });
+		  self.placeList()[i].marker = marker;
 		  marker.setMap(map);
+
+		  // Extend bound for new marker's position
+		  bounds.extend(position);
+
 		  // Push the marker to our array of markers
 		  markers.push(marker);
 		  // Two event listeners - one for mouseover, one for mouseout,
@@ -190,6 +201,9 @@ var ViewModel = function() {
 		    this.setIcon(defaultIcon);
 		  });
 		}
+
+		// Set all the markers inside the bounds
+		map.fitBounds(bounds);
 	};
 
 	// This function takes in a COLOR, and then creates a new marker
@@ -204,6 +218,17 @@ var ViewModel = function() {
 			scaledSize: new google.maps.Size(21, 34)
 		};
 	  	return image;
+	};
+
+	// Define two event binding functions for placeList
+	this.setCurIcon = function() {
+		console.log(this);
+		var icon = self.makeMarkerIcon('f49541');
+		this.marker.setIcon(icon);
+	};
+	this.setDefaultIcon = function() {
+		var icon = self.makeMarkerIcon('42c2f4');
+		this.marker.setIcon(icon);
 	};
 };
 
