@@ -212,11 +212,16 @@ var ViewModel = function() {
 
 		var infoWindow = new google.maps.InfoWindow();
 
+		var res_id = "";
+
 		// The following group uses the filtered location array to create an array of markers on initialize.
 		for (var i = 0; i<self.curPlaceList().length; i++) {
 		  // Get the position from the location array.
 		  var position = self.curPlaceList()[i].location();
 		  var title = self.curPlaceList()[i].name();
+		  var place = function() {
+		  	return self.curPlaceList()[i].zomatoId();
+		  };
 
 		  // Create a marker per location, and put into markers array.
 		  var marker = new google.maps.Marker({
@@ -237,8 +242,9 @@ var ViewModel = function() {
 		  markers.push(marker);
 
 		  // Create an onclick event to open the large infoWindow at each marker
+		  res_id = place();
 		  marker.addListener('click', function() {
-		    self.populateInfoWindow(this, infoWindow);
+		    self.populateInfoWindow(this, infoWindow, res_id);
 		  });
 
 		  // Two event listeners - one for mouseover, one for mouseout,
@@ -262,41 +268,70 @@ var ViewModel = function() {
 		});
 	};
 
-	this.populateInfoWindow = function (marker, infoWindow) {
-	  if (infoWindow.marker != marker) {
-	    infoWindow.marker = marker;
-	    infoWindow.setContent('');
-	    infoWindow.addListener('closeclick', function() {
-	      infoWindow.marker = null;
-	    });
+	this.populateInfoWindow = function (marker, infoWindow, place) {
+		console.log(place);
+		if (infoWindow.marker != marker) {
+			infoWindow.marker = marker;
+			infoWindow.setContent('');
+			infoWindow.addListener('closeclick', function() {
+		    	infoWindow.marker = null;
+			});
 
-	    var streetViewService = new google.maps.StreetViewService();
-	    var radius = 40;
-	    function getStreetView(data, status) {
-	      if (status == google.maps.StreetViewStatus.OK) {
-	        var nearLocation = data.location.latLng;
-	      
-	        var heading = google.maps.geometry.spherical.computeHeading(nearLocation, marker.position);
-	        infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
-	        var panoramaOptions = {
-	          position: nearLocation,
-	          pov: {
-	            heading: heading,
-	            pitch: 30
-	          }
-	        };
+			var streetViewService = new google.maps.StreetViewService();
+			var radius = 40;
+			function getStreetView(data, status) {
 
-	        // Id: #pano will be added automaticely within each infoWindow when click the marker
-	        var panorama = new google.maps.StreetViewPanorama($('#pano')[0], panoramaOptions);
-	        console.log(panorama);
-	        console.log("end of if");
-	      } else {
-	        infowindow.setContent('<div>' + marker.title + '</div>' + '<div>No Street View Found</div>');
-	      }
-	    }
-	    streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
-	    infoWindow.open(map, marker);
-	  }
+				var resId = place;
+				var rating = "";
+				$.ajax ({
+					url: "https://developers.zomato.com/api/v2.1/restaurant?",
+					data: {
+						'res_id': resId
+					},
+					headers: {
+						'user-key': "8efa773100b432e426e7816bfeaef2af"
+					},
+					dataType: "json",
+					success: function(data) {
+						rating = data.user_rating.aggregate_rating
+						console.log("rating:", rating);
+						
+					},
+					error: function(data) {
+						console.error("Can't find retaurant info.");
+					},
+					complete: function() {
+						var content = "";
+						if (status == google.maps.StreetViewStatus.OK) {
+							var nearLocation = data.location.latLng;
+
+							var heading = google.maps.geometry.spherical.computeHeading(nearLocation, marker.position);
+							//var rating = getZomatoDetail(place); 
+							content = '<div>' + marker.title + '</div><div id="pano"></div>' + '<div>rating: '+rating+'</div>';
+
+							infoWindow.setContent(content);
+							var panoramaOptions = {
+								position: nearLocation,
+								pov: {
+									heading: heading,
+									pitch: 30
+								}
+							};
+
+							// Id: #pano will be added automaticely within each infoWindow when click the marker
+							var panorama = new google.maps.StreetViewPanorama($('#pano')[0], panoramaOptions);
+
+						} else {
+							content = '<div>' + marker.title + '</div>' + '<div>No Street View Found</div>';
+							infowindow.setContent(content);
+						}
+					}
+				});
+	    	}
+
+			streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+			infoWindow.open(map, marker);
+		}
 	};
 
 	this.refreshMarkers = function() {
@@ -329,12 +364,10 @@ var ViewModel = function() {
 	  	return image;
 	};
 
-	var getZomatoId = function(place) {
-		return place.zomatoId;
-	};
-
-	var getZomatoDetail = function (resId,) {
+	var getZomatoDetail = function (place, callback) {
 		debugger;
+		var resId = place.zomatoId();
+		var rating = "";
 		$.ajax ({
 			url: "https://developers.zomato.com/api/v2.1/restaurant?",
 			data: {
@@ -345,10 +378,15 @@ var ViewModel = function() {
 			},
 			dataType: "json",
 			success: function(data) {
-				console.log(data);
+				rating = data.user_rating.aggregate_rating
+				console.log("rating:", rating);
+				return rating;
 			},
 			error: function(data) {
 				console.error("Can't find retaurant info.");
+			},
+			complete: function() {
+				return rating;
 			}
 		});
 	};
