@@ -65,6 +65,9 @@ header img {
 #place_list li {
 	height: 40px;
 }
+#place_list li div:hover {
+	color: #f49541;
+}
 #map {
 	position: absolute;
 	left: 300px;
