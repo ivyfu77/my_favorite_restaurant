@@ -34,7 +34,7 @@
 			</div>
 			<hr>
 			<ul id="place_list" data-bind="foreach: curPlaceList">
-				<li data-bind="event:{mouseover: $parent.setCurIcon, mouseout: $parent.setDefaultIcon}"><a href="#"><div data-bind="text: name"></div></a></li>
+				<li data-bind="click: $parent.getPlaceMarker, event:{mouseover: $parent.setCurIcon, mouseout: $parent.setDefaultIcon}"><a href="#"><div data-bind="text: name"></div></a></li>
 			</ul>
 		</div>
 		<div id="map"></div>

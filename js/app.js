@@ -141,6 +141,7 @@ var ViewModel = function() {
 
 	this.styleFilter = ko.observable("all");
 	this.areaFilter = ko.observable("all");
+	this.infoWindow = ko.observable(null);
 
 	// Computed the current showing places(markers) depending on the filters
 	this.curPlaceList = ko.computed(function() {
@@ -176,6 +177,11 @@ var ViewModel = function() {
 		this.marker.setIcon(icon);
 	};
 
+	this.getPlaceMarker = function(place) {
+		self.curPlace(place);
+		self.populateInfoWindow(place.marker);
+	};
+
 	/*
 	-- Google Maps Control
 	*/
@@ -194,7 +200,6 @@ var ViewModel = function() {
 
 	// Function to initialize the map within the map div
 	this.initMap = function() {
-		console.log("initMap");
 		map = new google.maps.Map($("#map")[0], {
 			center: {lat: -36.745779, lng: 174.746269},
 			styles: styles,
@@ -203,14 +208,18 @@ var ViewModel = function() {
 		});
 
 		showMarkers();
-
 	};
+
+	this.selectPlace = function(marker, place) {
+		return function() {
+			self.curPlace(place);
+			self.populateInfoWindow(marker);
+		};
+	}
 
 	var showMarkers = function() {
 		// Define the bounds for all the markers
 		var bounds = new google.maps.LatLngBounds();
-
-		var infoWindow = new google.maps.InfoWindow();
 
 		var res_id = "";
 
@@ -219,9 +228,7 @@ var ViewModel = function() {
 		  // Get the position from the location array.
 		  var position = self.curPlaceList()[i].location();
 		  var title = self.curPlaceList()[i].name();
-		  var place = function() {
-		  	return self.curPlaceList()[i].zomatoId();
-		  };
+		  var place = self.curPlaceList()[i];
 
 		  // Create a marker per location, and put into markers array.
 		  var marker = new google.maps.Marker({
@@ -230,7 +237,7 @@ var ViewModel = function() {
 		    animation: google.maps.Animation.DROP,
 		    //icon: "img/restaurant-icon-small.png",
 		    icon: defaultIcon(),
-		    id: i
+		    id: self.curPlaceList()[i].zomatoId()
 		  });
 		  self.curPlaceList()[i].marker = marker;
 		  marker.setMap(map);
@@ -242,10 +249,7 @@ var ViewModel = function() {
 		  markers.push(marker);
 
 		  // Create an onclick event to open the large infoWindow at each marker
-		  res_id = place();
-		  marker.addListener('click', function() {
-		    self.populateInfoWindow(this, infoWindow, res_id);
-		  });
+		  marker.addListener('click', self.selectPlace(marker, place));
 
 		  // Two event listeners - one for mouseover, one for mouseout,
 		  // to change the colors back and forth.
@@ -268,8 +272,10 @@ var ViewModel = function() {
 		});
 	};
 
-	this.populateInfoWindow = function (marker, infoWindow, place) {
-		console.log(place);
+	this.populateInfoWindow = function (marker) {
+		console.log(self.curPlace().name());
+		var infoWindow = (self.infoWindow() != null) ? self.infoWindow() : new google.maps.InfoWindow();
+		self.infoWindow(infoWindow);
 		if (infoWindow.marker != marker) {
 			infoWindow.marker = marker;
 			infoWindow.setContent('');
@@ -280,9 +286,11 @@ var ViewModel = function() {
 			var streetViewService = new google.maps.StreetViewService();
 			var radius = 40;
 			function getStreetView(data, status) {
-
-				var resId = place;
+				console.log(self.curPlace());
+				var resId = self.curPlace().zomatoId();
 				var rating = "";
+				var averageCostForTwo = "";
+				var currency = "";
 				$.ajax ({
 					url: "https://developers.zomato.com/api/v2.1/restaurant?",
 					data: {
@@ -293,7 +301,9 @@ var ViewModel = function() {
 					},
 					dataType: "json",
 					success: function(data) {
-						rating = data.user_rating.aggregate_rating
+						rating = data.user_rating.aggregate_rating;
+						averageCostForTwo = data.average_cost_for_two;
+						currency = data.currency;
 						console.log("rating:", rating);
 						
 					},
@@ -307,7 +317,9 @@ var ViewModel = function() {
 
 							var heading = google.maps.geometry.spherical.computeHeading(nearLocation, marker.position);
 							//var rating = getZomatoDetail(place); 
-							content = '<div>' + marker.title + '</div><div id="pano"></div>' + '<div>rating: '+rating+'</div>';
+							content = '<div>' + marker.title + '</div><div id="pano"></div>' + 
+									  '<div>Zomato rating: ' + rating + '</div>' +
+									  '<div>Average cost (for 2): ' + averageCostForTwo + " " + currency + '</div>';
 
 							infoWindow.setContent(content);
 							var panoramaOptions = {
@@ -320,7 +332,6 @@ var ViewModel = function() {
 
 							// Id: #pano will be added automaticely within each infoWindow when click the marker
 							var panorama = new google.maps.StreetViewPanorama($('#pano')[0], panoramaOptions);
-
 						} else {
 							content = '<div>' + marker.title + '</div>' + '<div>No Street View Found</div>';
 							infowindow.setContent(content);
@@ -362,33 +373,6 @@ var ViewModel = function() {
 			scaledSize: new google.maps.Size(21, 34)
 		};
 	  	return image;
-	};
-
-	var getZomatoDetail = function (place, callback) {
-		debugger;
-		var resId = place.zomatoId();
-		var rating = "";
-		$.ajax ({
-			url: "https://developers.zomato.com/api/v2.1/restaurant?",
-			data: {
-				'res_id': resId
-			},
-			headers: {
-				'user-key': "8efa773100b432e426e7816bfeaef2af"
-			},
-			dataType: "json",
-			success: function(data) {
-				rating = data.user_rating.aggregate_rating
-				console.log("rating:", rating);
-				return rating;
-			},
-			error: function(data) {
-				console.error("Can't find retaurant info.");
-			},
-			complete: function() {
-				return rating;
-			}
-		});
 	};
 
 };
