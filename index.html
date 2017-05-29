@@ -16,7 +16,7 @@
 			</header>
 			<div class="select_container">
 				<label for="styles">Styles: </label>
-				<select name="styles" id="styles">
+				<select name="styles" id="styles" data-bind="value: styleFilter, event: {change: refreshMarkers}">
 				  <option value="all">All</option>
 				  <option value="chinese">Chinese</option>
 				  <option value="western">Western</option>
@@ -26,14 +26,14 @@
 			</div>
 			<div class="select_container">
 				<label for="area">Areas: </label>
-				<select name="area" id="area">
+				<select name="area" id="area" data-bind="value: areaFilter, event: {change: refreshMarkers}">
 				  <option value="all">All</option>
 				  <option value="northshore">North Shore</option>
 				  <option value="city">City</option>
 				</select>
 			</div>
 			<hr>
-			<ul id="place_list" data-bind="foreach: placeList">
+			<ul id="place_list" data-bind="foreach: curPlaceList">
 				<li data-bind="event:{mouseover: $parent.setCurIcon, mouseout: $parent.setDefaultIcon}"><a href="#"><div data-bind="text: name"></div></a></li>
 			</ul>
 		</div>
