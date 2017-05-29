@@ -141,7 +141,6 @@ var ViewModel = function() {
 
 	this.styleFilter = ko.observable("all");
 	this.areaFilter = ko.observable("all");
-	this.infoWindow = ko.observable(null);
 
 	// Computed the current showing places(markers) depending on the filters
 	this.curPlaceList = ko.computed(function() {
@@ -272,10 +271,17 @@ var ViewModel = function() {
 		});
 	};
 
+	var infoWindow = null;
+
+	// Function to show place detail in infoWindow
 	this.populateInfoWindow = function (marker) {
-		console.log(self.curPlace().name());
-		var infoWindow = (self.infoWindow() != null) ? self.infoWindow() : new google.maps.InfoWindow();
-		self.infoWindow(infoWindow);
+		// Test console to make sure already get the right current place
+		//console.log(self.curPlace().name());
+
+		// Create new infoWindow only when click marker/place at the first time
+		infoWindow = (infoWindow != null) ? infoWindow : new google.maps.InfoWindow();
+
+		// If condition will avoid open multiple infoWindow when click the same marker again
 		if (infoWindow.marker != marker) {
 			infoWindow.marker = marker;
 			infoWindow.setContent('');
@@ -285,12 +291,16 @@ var ViewModel = function() {
 
 			var streetViewService = new google.maps.StreetViewService();
 			var radius = 40;
+
+			// Function to get streetView, Zomato info (by ajax)
 			function getStreetView(data, status) {
-				console.log(self.curPlace());
 				var resId = self.curPlace().zomatoId();
-				var rating = "";
-				var averageCostForTwo = "";
-				var currency = "";
+				var result = {
+					rating: "",
+					averageCostForTwo: "",
+					currency: "",
+					errMsg: ""
+				};
 				$.ajax ({
 					url: "https://developers.zomato.com/api/v2.1/restaurant?",
 					data: {
@@ -300,28 +310,25 @@ var ViewModel = function() {
 						'user-key': "8efa773100b432e426e7816bfeaef2af"
 					},
 					dataType: "json",
-					success: function(data) {
-						rating = data.user_rating.aggregate_rating;
-						averageCostForTwo = data.average_cost_for_two;
-						currency = data.currency;
-						console.log("rating:", rating);
-						
+					success: function(re) {
+						result.rating = (re.user_rating.aggregate_rating == "0")? re.user_rating.rating_text : re.user_rating.aggregate_rating;
+						result.averageCostForTwo = re.average_cost_for_two;
+						result.currency = re.currency;
 					},
-					error: function(data) {
-						console.error("Can't find retaurant info.");
+					error: function() {
+						result.errMsg = "Can't find Zomato info.";
 					},
 					complete: function() {
 						var content = "";
 						if (status == google.maps.StreetViewStatus.OK) {
-							var nearLocation = data.location.latLng;
+							content = '<div>' + marker.title + '</div><div id="pano"></div>';
 
-							var heading = google.maps.geometry.spherical.computeHeading(nearLocation, marker.position);
-							//var rating = getZomatoDetail(place); 
-							content = '<div>' + marker.title + '</div><div id="pano"></div>' + 
-									  '<div>Zomato rating: ' + rating + '</div>' +
-									  '<div>Average cost (for 2): ' + averageCostForTwo + " " + currency + '</div>';
+							content = checkZomatoInfo(result, content);
 
 							infoWindow.setContent(content);
+
+							var nearLocation = data.location.latLng;
+							var heading = google.maps.geometry.spherical.computeHeading(nearLocation, marker.position);
 							var panoramaOptions = {
 								position: nearLocation,
 								pov: {
@@ -334,10 +341,22 @@ var ViewModel = function() {
 							var panorama = new google.maps.StreetViewPanorama($('#pano')[0], panoramaOptions);
 						} else {
 							content = '<div>' + marker.title + '</div>' + '<div>No Street View Found</div>';
-							infowindow.setContent(content);
+							content = checkZomatoInfo(result, content);
+							infoWindow.setContent(content);
 						}
 					}
-				});
+				}); //End of $.ajax
+	    	} // End of function getStreetView
+
+	    	// Function to make sure content contains proper Zomato info
+	    	function checkZomatoInfo(result, content) {
+	    		if (result.errMsg != "") {
+	    			content += '<div>' + result.errMsg + '</div>';
+	    		} else {
+	    			content += '<div>Zomato rating: ' + result.rating + '</div>' +
+	    					   '<div>Average cost (for 2): ' + result.averageCostForTwo + " " + result.currency + '</div>';
+	    		}
+	    		return content;
 	    	}
 
 			streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
