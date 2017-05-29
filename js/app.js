@@ -118,7 +118,8 @@ var initPlaces = [
 	{name: "Nuna Restaurant", location: {lat:-36.8557640816, lng: 174.7622469440}, zomatoId: '7006543', style: 'korean', area: 'city', marker: null},
 ];
 
-// Model: Define the favorite place module
+// Model: 
+// --Define the favorite place module
 var Place = function(data) {
 	this.name = ko.observable(data.name);
 	this.location = ko.observable(data.location);
@@ -127,23 +128,28 @@ var Place = function(data) {
 	this.zomatoId = ko.observable(data.zomatoId);
 };
 
+// --Define the toggle btn object
 var Toggle = function() {
 	this.isClicked = ko.observable(false);
 };
 
-// View Model: Define the VM, control all the information changing for Models
+// View Model: Define the VM
+// -- control all the information changing for Models and showing the results on the View
 var ViewModel = function() {
 	var self = this; 
-	this.placeList = ko.observableArray([]);
+
+	self.placeList = ko.observableArray([]);
+
+	// Save the init places in placeList
 	initPlaces.forEach(function(place) {
 		self.placeList.push(new Place(place));
 	});
 
-	this.styleFilter = ko.observable("all");
-	this.areaFilter = ko.observable("all");
+	self.styleFilter = ko.observable("all");
+	self.areaFilter = ko.observable("all");
 
 	// Computed the current showing places(markers) depending on the filters
-	this.curPlaceList = ko.computed(function() {
+	self.curPlaceList = ko.computed(function() {
 		return ko.utils.arrayFilter(self.placeList(), function(place) {
 			if (self.styleFilter() == "all" && self.areaFilter() == "all") {
 				return (true);
@@ -157,28 +163,48 @@ var ViewModel = function() {
 		});
 	});
 
-	this.toggle = new Toggle();
-	this.toggleMenu = function() {
+	// Use toggle object to conrtol open/close the toggle menu
+	self.toggle = new Toggle();
+	self.toggleMenu = function() {
 		self.toggle.isClicked(!self.toggle.isClicked());
 	};
 
-	this.curPlace = ko.observable(this.placeList()[0]);
+	// curPlace is what has been clicked in markers or curPlaceList
+	self.curPlace = ko.observable(self.placeList()[0]);
 
 	// Define two event binding functions for placeList
-	this.setCurIcon = function() {
+	self.setCurIcon = function() {
 		var icon = makeMarkerIcon('f49541');
 
 		// "this" here means the Place object
 		this.marker.setIcon(icon);
 	};
-	this.setDefaultIcon = function() {
+	self.setDefaultIcon = function() {
 		var icon = makeMarkerIcon('42c2f4');
 		this.marker.setIcon(icon);
 	};
 
-	this.getPlaceMarker = function(place) {
+	// Bind to curPlaceList click event
+	// --- Update curPlace then pop up the infoWindow in right marker
+	self.getPlaceMarker = function(place) {
 		self.curPlace(place);
-		self.populateInfoWindow(place.marker);
+		populateInfoWindow(place.marker);
+	};
+
+	// Bind to style & area filter change
+	self.refreshMarkers = function() {
+		// Clear all markers on the map
+		for (var i = 0; i < markers.length; i++) {
+		  markers[i].setMap(null);
+		}
+
+		// Empty the markers array
+		markers = [];
+
+		if (self.curPlaceList().length > 0) {
+			// Show all the new markers depending on the filters
+			showMarkers();
+		}
 	};
 
 	/*
@@ -191,14 +217,13 @@ var ViewModel = function() {
 	var defaultIcon = function() {
 		 return makeMarkerIcon('42c2f4');
 	};
-	// Create a "highlighted location" marker color for when the user
-	// mouses over the marker.
+	// Create a "highlighted location" marker color for when the user mouses over the marker.
 	var highlightedIcon = function() {
 		return makeMarkerIcon('f49541');
 	};
 
 	// Function to initialize the map within the map div
-	this.initMap = function() {
+	self.initMap = function() {
 		map = new google.maps.Map($("#map")[0], {
 			center: {lat: -36.745779, lng: 174.746269},
 			styles: styles,
@@ -209,13 +234,15 @@ var ViewModel = function() {
 		showMarkers();
 	};
 
-	this.selectPlace = function(marker, place) {
+	// Define this closure return function to make sure add the right listener for each marker 
+	var selectPlace = function(marker, place) {
 		return function() {
 			self.curPlace(place);
-			self.populateInfoWindow(marker);
+			populateInfoWindow(marker);
 		};
 	}
 
+	// Loop to show all the markers in curPlaceList
 	var showMarkers = function() {
 		// Define the bounds for all the markers
 		var bounds = new google.maps.LatLngBounds();
@@ -248,7 +275,7 @@ var ViewModel = function() {
 		  markers.push(marker);
 
 		  // Create an onclick event to open the large infoWindow at each marker
-		  marker.addListener('click', self.selectPlace(marker, place));
+		  marker.addListener('click', selectPlace(marker, place));
 
 		  // Two event listeners - one for mouseover, one for mouseout,
 		  // to change the colors back and forth.
@@ -274,7 +301,7 @@ var ViewModel = function() {
 	var infoWindow = null;
 
 	// Function to show place detail in infoWindow
-	this.populateInfoWindow = function (marker) {
+	var populateInfoWindow = function (marker) {
 		// Test console to make sure already get the right current place
 		//console.log(self.curPlace().name());
 
@@ -301,6 +328,8 @@ var ViewModel = function() {
 					currency: "",
 					errMsg: ""
 				};
+
+				// Use ajax to get the Zomato restaurant info
 				$.ajax ({
 					url: "https://developers.zomato.com/api/v2.1/restaurant?",
 					data: {
@@ -359,26 +388,11 @@ var ViewModel = function() {
 	    		return content;
 	    	}
 
+			// Open infoWindow and show the streetView & Zomato info
 			streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
 			infoWindow.open(map, marker);
 		}
 	};
-
-	this.refreshMarkers = function() {
-		// Clear all markers on the map
-		for (var i = 0; i < markers.length; i++) {
-		  markers[i].setMap(null);
-		}
-
-		// Empty the markers array
-		markers = [];
-
-		if (this.curPlaceList().length > 0) {
-			// Show all the new markers depending on the filters
-			showMarkers();
-		}
-	};
-
 
 	// This function takes in a COLOR, and then creates a new marker
 	// icon of that color. The icon will be 21 px wide by 34 high, have an origin
