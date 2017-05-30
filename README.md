@@ -18,7 +18,7 @@ Build a single page app to show all my favorite restaurant in Auckland NZ
 `$ git clone https://github.com/ivyfu77/my_favorite_restaurant.git`
 
 2. Open index.html in your browser (Can open directly, no webserver needed)
-3. <span style="color:red">Note:</span> You should get your own google_maps and zomato api key instead of mine if you want to build your own Map App.
+3. <span style="color:red">**Note:**</span> You should get your own google_maps and zomato api key instead of mine if you want to build your own Map App.
 
 
 #### Data Source
