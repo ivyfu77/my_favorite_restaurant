@@ -174,43 +174,53 @@ var ViewModel = function() {
 
 	// Define two event binding functions for placeList
 	self.setCurIcon = function() {
-		var icon = makeMarkerIcon('f49541');
+		if (this.marker != null) {
+			var icon = makeMarkerIcon('f49541');
 
-		// "this" here means the Place object
-		this.marker.setIcon(icon);
+			// "this" here means the Place object
+			this.marker.setIcon(icon);
+		}
 	};
 	self.setDefaultIcon = function() {
-		var icon = makeMarkerIcon('42c2f4');
-		this.marker.setIcon(icon);
+		if (this.marker != null) {
+			var icon = makeMarkerIcon('42c2f4');
+			this.marker.setIcon(icon);
+		}
 	};
 
 	// Bind to curPlaceList click event
 	// --- Update curPlace then pop up the infoWindow in right marker
 	self.getPlaceMarker = function(place) {
 		self.curPlace(place);
-		populateInfoWindow(place.marker);
+		if (place.marker) {
+			populateInfoWindow(place.marker);
+		}
 	};
 
 	// Bind to style & area filter change
 	self.refreshMarkers = function() {
-		// Clear all markers on the map
-		for (var i = 0; i < markers.length; i++) {
-		  markers[i].setMap(null);
-		}
 
-		// Empty the markers array
-		markers = [];
+		// Only refresh the markers when google map loaded successfully
+		if (map) {
+			// Clear all markers on the map
+			for (var i = 0; i < markers.length; i++) {
+			  markers[i].setMap(null);
+			}
 
-		if (self.curPlaceList().length > 0) {
-			// Show all the new markers depending on the filters
-			showMarkers();
+			// Empty the markers array
+			markers = [];
+
+			if (self.curPlaceList().length > 0) {
+				// Show all the new markers depending on the filters
+				showMarkers();
+			}
 		}
 	};
 
 	/*
 	-- Google Maps Control
 	*/
-	var map;
+	var map = null;
 	var markers = [];
 
 	// Style the markers a bit. This will be our listing marker icon.
@@ -224,14 +234,31 @@ var ViewModel = function() {
 
 	// Function to initialize the map within the map div
 	self.initMap = function() {
-		map = new google.maps.Map($("#map")[0], {
-			center: {lat: -36.745779, lng: 174.746269},
-			styles: styles,
-			zoom: 13,
-			mapTypeControl: false
-		});
+		var script = document.createElement("script");
+		$(script).attr("type", "text/javascript");
 
-		showMarkers();
+		// Catch the error like invalid link, network disconnect
+		script.onerror = function(event){ 
+			console.log(event);
+			$("#map").html("Sorry Google Map Service is not available now, please try again later.");
+		};
+
+		// Define the callback when google maps loaded successfully
+		script.onload = function(event){
+		   //Script loaded
+		   $("#map").html("");
+			map = new google.maps.Map($("#map")[0], {
+				center: {lat: -36.745779, lng: 174.746269},
+				styles: styles,
+				zoom: 13,
+				mapTypeControl: false
+			});
+
+			showMarkers();
+		};
+		script.src = "https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry";
+		document.body.appendChild(script);
+
 	};
 
 	// Define this closure return function to make sure add the right listener for each marker 
@@ -410,6 +437,13 @@ var ViewModel = function() {
 
 };
 
+// Define this global function to detect Google Maps authentication failure
+function gm_authFailure() { 
+	$("#map").text("Oops! Seems your Google Maps API Key is invailid or expired. ");
+};
+
 var vm = new ViewModel();
 
 ko.applyBindings(vm);
+
+vm.initMap();

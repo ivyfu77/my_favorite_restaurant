@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Neighborhood Map</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/narrow-screen.css" media="screen and (max-width: 979px)" />
+    <link rel="stylesheet" href="css/narrow-screen.css" media="screen and (max-width: 979px)">
 </head>
 <body>
 	<div class="container">
 		<div id="options" data-bind="css:{'open': toggle.isClicked}">
 			<header>
 				<h1>My Favorite </h1>
-				<img src="img/restaurant-icon-3.png" />
+				<img src="img/restaurant-icon-3.png">
 			</header>
 			<div class="select_container">
 				<label for="styles">Cuisines: </label>
@@ -45,8 +45,5 @@
 	<script src="js/libs/jquery.min.js"></script>
 	<script src="js/libs/knockout-3.4.2.js"></script>
 	<script src="js/app.js" async></script>
-	<script async defer
-	  src="https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry&callback=vm.initMap">
-	</script>
 </body>
 </html>
