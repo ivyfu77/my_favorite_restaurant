@@ -270,7 +270,7 @@ var GoogleMap = function(placeList) {
 			self.showMarkers();
 			self.mapLoaded = true;
 		};
-		script.src = "https://maps.googleapis.com/maps/api/js?v=3&key=ivyAIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry";
+		script.src = "https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry";
 		document.body.appendChild(script);
 
 	};
