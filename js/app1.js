@@ -1,6 +1,5 @@
-
 /*
- * This js file put the Google Maps API control in ViewModel
+ * This js file seperate the Google Maps API control in GoogleMap Class
  */
 
 // Define the init datas
@@ -168,19 +167,23 @@ var ViewModel = function() {
 		});
 	});
 
+	// Create a new GoogleMap object
+	var gm = new GoogleMap(self.curPlaceList());
+
+	self.init = function() {
+		gm.initMap();
+	};
+
 	// Use toggle object to conrtol open/close the toggle menu
 	self.toggle = new Toggle();
 	self.toggleMenu = function() {
 		self.toggle.isClicked(!self.toggle.isClicked());
 	};
 
-	// curPlace is what has been clicked in markers or curPlaceList
-	self.curPlace = ko.observable(self.placeList()[0]);
-
 	// Define two event binding functions for placeList
 	self.setCurIcon = function() {
 		if (this.marker != null) {
-			var icon = makeMarkerIcon('f49541');
+			var icon = gm.makeMarkerIcon('f49541');
 
 			// "this" here means the Place object
 			this.marker.setIcon(icon);
@@ -188,17 +191,16 @@ var ViewModel = function() {
 	};
 	self.setDefaultIcon = function() {
 		if (this.marker != null) {
-			var icon = makeMarkerIcon('42c2f4');
+			var icon = gm.makeMarkerIcon('42c2f4');
 			this.marker.setIcon(icon);
 		}
 	};
 
 	// Bind to curPlaceList click event
-	// --- Update curPlace then pop up the infoWindow in right marker
+	// --- Pop up the infoWindow in right marker
 	self.getPlaceMarker = function(place) {
-		self.curPlace(place);
 		if (place.marker) {
-			populateInfoWindow(place.marker);
+			gm.populateInfoWindow(place.marker);
 		}
 	};
 
@@ -206,35 +208,41 @@ var ViewModel = function() {
 	self.refreshMarkers = function() {
 
 		// Only refresh the markers when google map loaded successfully
-		if (map) {
+		if (gm.mapLoaded) {
 			// Clear all markers on the map
-			for (var i = 0; i < markers.length; i++) {
-			  markers[i].setMap(null);
-			}
+			gm.clearMarkers();
 
-			// Empty the markers array
-			markers = [];
+			// Reset curPlaceList for GoogleMap Object
+			gm.curPlaceList = self.curPlaceList();
 
 			if (self.curPlaceList().length > 0) {
 				// Show all the new markers depending on the filters
-				showMarkers();
+				gm.showMarkers();
 			}
 		}
 	};
 
+};
+
+var GoogleMap = function(placeList) {
 	/*
 	-- Google Maps Control
 	*/
+	var self = this;
+
+	self.mapLoaded = false;
 	var map = null;
 	var markers = [];
 
+	self.curPlaceList = placeList;
+
 	// Style the markers a bit. This will be our listing marker icon.
 	var defaultIcon = function() {
-		 return makeMarkerIcon('42c2f4');
+		return self.makeMarkerIcon('42c2f4');
 	};
 	// Create a "highlighted location" marker color for when the user mouses over the marker.
 	var highlightedIcon = function() {
-		return makeMarkerIcon('f49541');
+		return self.makeMarkerIcon('f49541');
 	};
 
 	// Function to initialize the map within the map div
@@ -255,38 +263,35 @@ var ViewModel = function() {
 			map = new google.maps.Map($("#map")[0], {
 				center: {lat: -36.745779, lng: 174.746269},
 				styles: styles,
-				zoom: 13,
+				zoom: 11,
 				mapTypeControl: false
 			});
 
-			showMarkers();
+			self.showMarkers();
+			self.mapLoaded = true;
 		};
-		script.src = "https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry";
+		script.src = "https://maps.googleapis.com/maps/api/js?v=3&key=ivyAIzaSyBZ945M_d3h1LEOJFxLekJVA8-Pmc1TwQE&libraries=places,geometry";
 		document.body.appendChild(script);
 
 	};
 
 	// Define this closure return function to make sure add the right listener for each marker 
-	var selectPlace = function(marker, place) {
+	var selectPlace = function(marker) {
 		return function() {
-			self.curPlace(place);
-			populateInfoWindow(marker);
+			self.populateInfoWindow(marker);
 		};
 	}
 
 	// Loop to show all the markers in curPlaceList
-	var showMarkers = function() {
+	self.showMarkers = function() {
 		// Define the bounds for all the markers
 		var bounds = new google.maps.LatLngBounds();
 
-		var res_id = "";
-
 		// The following group uses the filtered location array to create an array of markers on initialize.
-		for (var i = 0; i<self.curPlaceList().length; i++) {
+		for (var i = 0; i<self.curPlaceList.length; i++) {
 		  // Get the position from the location array.
-		  var position = self.curPlaceList()[i].location();
-		  var title = self.curPlaceList()[i].name();
-		  var place = self.curPlaceList()[i];
+		  var position = self.curPlaceList[i].location();
+		  var title = self.curPlaceList[i].name();
 
 		  // Create a marker per location, and put into markers array.
 		  var marker = new google.maps.Marker({
@@ -295,9 +300,9 @@ var ViewModel = function() {
 		    animation: google.maps.Animation.DROP,
 		    //icon: "img/restaurant-icon-small.png",
 		    icon: defaultIcon(),
-		    id: self.curPlaceList()[i].zomatoId()
+		    id: self.curPlaceList[i].zomatoId()
 		  });
-		  self.curPlaceList()[i].marker = marker;
+		  self.curPlaceList[i].marker = marker;
 		  marker.setMap(map);
 
 		  // Extend bound for new marker's position
@@ -307,7 +312,7 @@ var ViewModel = function() {
 		  markers.push(marker);
 
 		  // Create an onclick event to open the large infoWindow at each marker
-		  marker.addListener('click', selectPlace(marker, place));
+		  marker.addListener('click', selectPlace(marker));
 
 		  // Two event listeners - one for mouseover, one for mouseout,
 		  // to change the colors back and forth.
@@ -330,12 +335,19 @@ var ViewModel = function() {
 		});
 	};
 
+	// Clear all markers on the map
+	self.clearMarkers = function() {
+		for (var i = 0; i < markers.length; i++) {
+			markers[i].setMap(null);
+		}
+		// Empty the markers array
+		markers = [];
+	};
+
 	var infoWindow = null;
 
 	// Function to show place detail in infoWindow
-	var populateInfoWindow = function (marker) {
-		// Test console to make sure already get the right current place
-		//console.log(self.curPlace().name());
+	self.populateInfoWindow = function (marker) {
 
 		// Create new infoWindow only when click marker/place at the first time
 		infoWindow = (infoWindow != null) ? infoWindow : new google.maps.InfoWindow();
@@ -353,7 +365,7 @@ var ViewModel = function() {
 
 			// Function to get streetView, Zomato info (by ajax)
 			function getStreetView(data, status) {
-				var resId = self.curPlace().zomatoId();
+				var resId = marker.id;
 				var result = {
 					rating: "",
 					averageCostForTwo: "",
@@ -429,7 +441,7 @@ var ViewModel = function() {
 	// This function takes in a COLOR, and then creates a new marker
 	// icon of that color. The icon will be 21 px wide by 34 high, have an origin
 	// of 0, 0 and be anchored at 10, 34).
-	var makeMarkerIcon = function(markerColor) {
+	self.makeMarkerIcon = function(markerColor) {
 		var image = {
 			url: 'http://chart.googleapis.com/chart?chst=d_map_spin&chld=1.15|0|'+ markerColor + '|40|_|%E2%80%A2',
 			size: new google.maps.Size(21, 34),
@@ -444,11 +456,11 @@ var ViewModel = function() {
 
 // Define this global function to detect Google Maps authentication failure
 function gm_authFailure() { 
-	$("#map").text("Oops! Seems your Google Maps API Key is invailid or expired. ");
+	$("#map").text("Oops! Seems your Google Maps API Key is invalid or expired. ");
 };
 
 var vm = new ViewModel();
 
 ko.applyBindings(vm);
 
-vm.initMap();
+vm.init();
